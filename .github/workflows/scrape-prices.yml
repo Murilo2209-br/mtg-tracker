@@ -8,6 +8,8 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,5 +19,3 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npx prisma generate
       - run: npm run scrape-prices
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
