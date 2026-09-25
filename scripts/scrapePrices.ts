@@ -1,5 +1,6 @@
 import { chromium } from "playwright";
 import { PrismaClient } from "@prisma/client";
+import fs from "fs";
 
 const prisma = new PrismaClient();
 
@@ -17,6 +18,13 @@ async function buscarPrecoLigaMagic(nomeCarta: string): Promise<number | null> {
 
   try {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
+
+    const titulo = await page.title();
+    console.log(`Título da página carregada: "${titulo}"`);
+
+    if (!fs.existsSync("debug")) fs.mkdirSync("debug");
+    await page.screenshot({ path: `debug/${nomeCarta.replace(/\s+/g, "_")}.png`, fullPage: true });
+
     const precoTexto = await page
       .locator("#container-price-mkp-card .min .price")
       .first()
