@@ -5,19 +5,33 @@ const prisma = new PrismaClient();
 
 async function buscarPrecoLigaMagic(nomeCarta: string): Promise<number | null> {
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const context = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    viewport: { width: 1366, height: 768 },
+    locale: "pt-BR",
+  });
+  const page = await context.newPage();
 
   const url = `https://www.ligamagic.com.br/?view=cards/card&card=${encodeURIComponent(nomeCarta)}&tipo=1`;
-  await page.goto(url, { waitUntil: "networkidle" });
 
-  const precoTexto = await page.locator("#container-price-mkp-card .min .price").first().textContent();
+  try {
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
+    const precoTexto = await page
+      .locator("#container-price-mkp-card .min .price")
+      .first()
+      .textContent({ timeout: 15000 });
 
-  await browser.close();
+    if (!precoTexto) return null;
 
-  if (!precoTexto) return null;
-
-  const precoLimpo = precoTexto.replace("R$", "").replace(".", "").replace(",", ".").trim();
-  return parseFloat(precoLimpo);
+    const precoLimpo = precoTexto.replace("R$", "").replace(".", "").replace(",", ".").trim();
+    return parseFloat(precoLimpo);
+  } catch (e) {
+    console.log(`Não conseguiu carregar o preço de "${nomeCarta}": ${(e as Error).message}`);
+    return null;
+  } finally {
+    await browser.close();
+  }
 }
 
 async function main() {
